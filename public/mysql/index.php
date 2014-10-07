@@ -63,15 +63,10 @@ $app->post('/resources', function () use ($app) {
     try {
         $db->execute('CREATE DATABASE ' . $name);
 
-        $password = md5($name . time() . rand(100, 999));
-        $db->execute("CREATE USER '$name'@'%' IDENTIFIED BY '$password'; ");
-
         $jsonData = [
             'MYSQL_DATABASE_NAME' => $name,
             'MYSQL_HOST' => '192.168.1.241',
-            'MYSQL_PASSWORD' => $password,
-            'MYSQL_PORT' => "3306",
-            'MYSQL_USER' => $name,
+            'MYSQL_PORT' => "3306"
         ];
         $db->insert('instance', [$name, $team, $plan, json_encode($jsonData)], ['name', 'team', 'plan', 'params']);
     } catch (\Exception $e) {
@@ -96,11 +91,19 @@ $app->post('/resources/{name:[a-zA-Z0-9\-]+}', function ($name) use ($app) {
 
     /** @var Phalcon\Db\Adapter\Pdo $db */
     $db = $app->getDI()->getShared('db');
+    $password = md5($name . time() . rand(100, 999));
+    $db->execute("CREATE USER '$appHost'@'%' IDENTIFIED BY '$password'; ");
+    $db->execute("GRANT ALL PRIVILEGES ON $name TO '$appHost'@'%';");
+    $db->execute("FLUSH PRIVILEGES;");
+
     $row = $db->query("SELECT * FROM instance WHERE name = '$name'")->fetch();
 
     $response = new \Phalcon\Http\Response();
     $response->setStatusCode(201, "");
-    $response->setContent($row['params']);
+    $params = json_decode($row['params']);
+    $params['MYSQL_USER'] = $appHost;
+    $params['MYSQL_PASSWORD'] = $password;
+    $response->setContent(json_encode($params));
     return $response;
 });
 
