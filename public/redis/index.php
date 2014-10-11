@@ -75,7 +75,7 @@ $app->post('/resources/{name:[a-zA-Z0-9\-]+}', function ($name) use ($app, $conf
     $response = new \Phalcon\Http\Response();
     $response->setStatusCode(201, "");
     $params = [
-        'REDIS_DB' => rand(1, 1000),
+        'REDIS_DB' => (string)(rand(1, 1000)),
         'REDIS_HOST' => $config->redis->host,
         'REDIS_PORT' => "6379",
     ];
